@@ -1,6 +1,6 @@
 # CardioScan model card
 
-**Model family:** ECGResNet1D-v1. **Status:** awaiting real training and final evaluation.
+**Model family:** ECGResNet1D-v1. **Version:** ptbxl-resnet1d-v1. **Status:** frozen and evaluated.
 
 ## Intended use
 
@@ -12,11 +12,11 @@ Clinical diagnosis, emergency triage, treatment selection, patient reassurance, 
 
 ## Training data
 
-PTB-XL v1.0.3, 100 Hz twelve-lead, ten-second recordings. Folds 1–8 train, fold 9 validates, fold 10 is the held-out test. Exact included counts, patients and IDs are generated in `split_audit.json`; records without mapped diagnostic superclasses are excluded. Labels use diagnostic SCP-code presence and the supplied superclass mapping. Original release data were collected in historical clinical settings; the distribution does not represent every population or device.
+PTB-XL v1.0.3, 100 Hz twelve-lead, ten-second recordings. Folds 1–8 train (17,084 records), fold 9 validates (2,146), and fold 10 is the held-out test (2,158). Exact patients, class counts and IDs are in `split_audit.json`; 411 records without mapped diagnostic superclasses were excluded. Labels use diagnostic SCP-code presence and the supplied superclass mapping. Original release data were collected in historical clinical settings; the distribution does not represent every population or device.
 
 ## Method
 
-15-sample stem, four downsampling residual stages with two kernel-7 blocks each and channels 64/128/256/512, BatchNorm/ReLU, adaptive pooling, dropout and five logits. Weighted BCE uses training-only positive weights. Per-lead mean/std are fitted on training data only. No filtering, sampling reweighting or focal loss is used by default.
+15-sample stem, four downsampling residual stages with two kernel-7 blocks each and channels 64/128/256/512, BatchNorm/ReLU, adaptive pooling, dropout and five logits. Weighted BCE uses training-only positive weights. Per-lead mean/std are fitted on training data only. No filtering, sampling reweighting or focal loss is used. The seed-42 run used AdamW, batch size 64, initial learning rate 0.001, weight decay 0.0001, dropout 0.3 and full-precision CUDA on a GTX 1660 Ti. It stopped after epoch 22 and selected epoch 12 by validation macro AUROC.
 
 Validation macro AUROC chooses the checkpoint, scheduler and stopping point. Per-class F1 thresholds are selected on fold 9 using the frozen best checkpoint. No calibration is fitted. Validation is reused for selection and thresholding; validation performance is not an unbiased final estimate.
 
@@ -24,7 +24,9 @@ Validation macro AUROC chooses the checkpoint, scheduler and stopping point. Per
 
 The separate evaluation command opens fold 10 only after all model decisions are frozen. It uses saved normalization and thresholds without fitting. Macro/micro/per-class AUROC and average precision, F1, precision, sensitivity, specificity, support and confusion matrices are exported. Optional AUROC intervals use a patient-cluster percentile bootstrap, conditional on the fitted model.
 
-**Real metrics: unavailable until training/evaluation is run.** Read the active artifact's `metrics.json` and `model_metadata.json`; no historical scores or synthetic-fixture scores are valid substitutes. Development/test duplicate waveform hashes and patient separation are checked. A changed model requires a new artifact; test results must not become tuning feedback.
+The single frozen evaluation covered 2,158 ECGs from 1,877 patients in fold 10. Macro AUROC was **0.9230** (95% patient-cluster bootstrap CI 0.9155–0.9297), macro AUPRC 0.8171, macro F1 0.7417 and micro F1 0.7707. Per-class AUROC was 0.9232 CD, 0.9062 HYP, 0.9102 MI, 0.9428 NORM and 0.9327 STTC. See `metrics.json` for thresholds, AUPRC, precision, sensitivity, specificity, confusion matrices and all confidence intervals.
+
+These results condition on one fitted model and one public retrospective dataset. They are not external, prospective, subgroup or clinical validation. Development/test duplicate waveform hashes and patient separation were checked. A changed model requires a new artifact; these test results must not become tuning feedback.
 
 ## Input requirements
 
@@ -44,6 +46,6 @@ Missing, corrupt, incompatible, nonfinite or synthetic artifacts cannot produce 
 
 ## Provenance and attribution
 
-Artifacts record architecture, class/lead order, normalization, validation thresholds, dataset version, seed, training date, best epoch, git commit/dirty status, software and data/checkpoint hashes. See [README citations](README.md#21-dataset-citation--license) and [PTB-XL on PhysioNet](https://physionet.org/content/ptb-xl/1.0.3/), CC BY 4.0.
+Artifacts record architecture, class/lead order, normalization, validation thresholds, dataset version, seed, training date, best epoch, git commit/dirty status, software and data/checkpoint hashes. The inference checkpoint SHA-256 is `2e660482295f66c0b42e8f20cbd47c18ad6d5931f4b933a597488efd3f6ead85`; training used clean source commit `57e8e2f986d8d0722468ef796f8d3d6b2f565ded`. See [README citations](README.md#21-dataset-citation--license) and [PTB-XL on PhysioNet](https://physionet.org/content/ptb-xl/1.0.3/), CC BY 4.0.
 
 **Research prototype — not a medical device and not intended for clinical diagnosis or emergency decision-making.** Performance on PTB-XL does not establish clinical effectiveness.

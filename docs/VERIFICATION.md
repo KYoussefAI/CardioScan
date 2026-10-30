@@ -1,13 +1,15 @@
-# Verification record — 6 October 2026
+# Verification record — 30 October 2026
 
-These checks validate the implementation. They are not evidence of ECG classifier
-performance or clinical effectiveness. No full PTB-XL training run was performed.
+These checks validate the implementation and record the frozen PTB-XL experiment.
+Benchmark performance is not evidence of clinical effectiveness.
 
 | Check | Result |
 |---|---|
 | Python ML/API suite | 43 passed; no warnings on the final run |
 | Synthetic WFDB training smoke | Two epochs, best checkpoint, stored normalization and validation thresholds generated |
 | Synthetic held-out evaluation | Metrics, patient-bootstrap intervals and all five requested plots generated |
+| Real PTB-XL training | 17,084 records, seed 42, full-precision CUDA; stopped at epoch 22, best epoch 12 |
+| Frozen fold-10 evaluation | 2,158 records / 1,877 patients; macro AUROC 0.9230 (95% CI 0.9155–0.9297) |
 | Interrupted training | Resume reproduces uninterrupted model weights and thresholds on the deterministic fixture |
 | Interrupted evaluation | Metadata finalization recovers without recomputing test predictions |
 | JSON / CSV / NPY | Validation and prediction routes exercised with synthetic fixtures |
@@ -22,9 +24,9 @@ performance or clinical effectiveness. No full PTB-XL training run was performed
 
 ## Real metadata audit
 
-Official PTB-XL v1.0.3 metadata downloaded from PhysioNet; no real waveform data
-were opened during preparation. Canonical superclass mapping and patient/fold
-checks yielded:
+Official PTB-XL v1.0.3 metadata and the complete 100 Hz waveform tree were
+downloaded from PhysioNet. Canonical superclass mapping and patient/fold checks
+yielded:
 
 | Partition | Records | Patients |
 |---|---:|---:|
@@ -32,27 +34,26 @@ checks yielded:
 | Validation, fold 9 | 2,146 | 1,917 |
 | Held-out test, fold 10 | 2,158 | 1,877 |
 
-411 records without mapped diagnostic superclasses were excluded. The generated
-local audit is `artifacts/metadata_audit.json`. These are cohort counts, not
-performance metrics. The dataset's `records100/` files still need downloading.
+411 records without mapped diagnostic superclasses were excluded. The run audit,
+record IDs and class counts are published in `artifacts/ptbxl-resnet1d-v1/split_audit.json`.
+Raw dataset files remain excluded from the repository.
 
-## CPU engineering check
+## Definitive training environment
 
-The default network has 8,739,973 parameters. On this workspace, batch size one,
-four CPU threads, `torch.inference_mode()`, three warmups and twenty measured
-forward passes averaged approximately **7.95 ms** per forward pass. This excludes
-HTTP, parsing and preprocessing, uses a synthetic tensor, and is not a deployment
-latency guarantee. Python 3.12.15 / PyTorch 2.14.1+cpu were used.
+The default network has 8,739,973 parameters. Training used Python 3.12.10,
+PyTorch 2.14.1+cu130 and a 6 GB NVIDIA GTX 1660 Ti, with deterministic algorithms,
+batch size 64 and full precision. After the first epoch, epochs took approximately
+18.1–18.5 seconds. A preliminary AMP attempt produced a non-finite first-epoch
+loss on this machine and was discarded before a checkpoint existed; the frozen
+run therefore used `--no-amp`.
 
 ## Practical limits
 
-- CUDA was unavailable; CUDA/AMP code was not exercised on GPU hardware.
 - Docker was unavailable; Dockerfiles and Compose files were reviewed, but images
-  were not built or run locally. CI workflow was added but not executed on GitHub.
-- Full real training, fold-10 performance, calibration, external validation and
+  were not built or run locally. Equivalent Python and frontend checks passed locally.
+- Calibration, external validation, subgroup analysis, prospective validation and
   clinical validation remain unperformed. Calibration is explicitly `none`.
 - Browser WFDB pair upload is deferred. WFDB training ingestion is implemented.
-- No repository push, remote publication or deployment was performed.
 
 ## Repeat checks
 
@@ -67,7 +68,8 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
-The file preflight intentionally reports missing waveforms until `records100` is
-installed. Browser checks require the backend running without a model; in
+On a fresh clone, the file preflight reports missing waveforms until `records100`
+is installed. Browser missing-model checks require the backend running with an
+empty `MODEL_DIR`; in
 `frontend/`, set `$env:PW_CHANNEL='msedge'` on Windows or install Playwright
 Chromium, then run `npx.cmd playwright test`.

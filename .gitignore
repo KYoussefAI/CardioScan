@@ -74,3 +74,11 @@ htmlcov/
 !.env.example
 playwright-report/
 test-results/
+
+# Publish the frozen, evaluated deployment bundle. The optimizer/resume state is
+# intentionally local-only; it is not needed for inference and exceeds 100 MB.
+!artifacts/
+artifacts/*
+!artifacts/ptbxl-resnet1d-v1/
+!artifacts/ptbxl-resnet1d-v1/**
+artifacts/ptbxl-resnet1d-v1/last_checkpoint.pt

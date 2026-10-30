@@ -2,3 +2,5 @@
 *.png binary
 *.pdf binary
 *.jpg binary
+artifacts/ptbxl-resnet1d-v1/best_model.pt filter=lfs diff=lfs merge=lfs -text
+artifacts/ptbxl-resnet1d-v1/*.json binary

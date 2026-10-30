@@ -2,7 +2,7 @@
 
 An end-to-end, AI-assisted 12-lead ECG classification research prototype built with PyTorch, PTB-XL, FastAPI and React.
 
-**Status: ready for a new training run; awaiting final evaluation.** No performance from the retired experiment is used by this application. A missing or incompatible model disables prediction.
+**Status: trained and evaluated on PTB-XL v1.0.3.** The frozen `ptbxl-resnet1d-v1` artifact is included; held-out fold-10 macro AUROC is **0.9230** (95% patient-bootstrap CI 0.9155–0.9297). A missing or incompatible model still disables prediction.
 
 ![CardioScan workstation — synthetic signal preview](docs/images/workstation.png)
 
@@ -56,9 +56,9 @@ data/ptb-xl/1.0.3/
   ...
 ```
 
-Neither the dataset nor trained weights are bundled. Raw WFDB upload through the browser is not currently supported; export its physical samples to JSON/CSV/NPY first. WFDB loading for training is supported.
+The raw dataset is not bundled; the frozen inference weights and evaluation reports are. Raw WFDB upload through the browser is not currently supported; export its physical samples to JSON/CSV/NPY first. WFDB loading for training is supported.
 
-The official v1.0.3 metadata audit on this revision found 17,084 included training records, 2,146 validation records and 2,158 test records; 411 records had no mapped diagnostic superclass. This is a metadata audit, not a training or performance result. Reproduce it and check downloaded files with `python -m training.audit --data-dir data/ptb-xl/1.0.3 --check-files`. Only the two metadata CSVs were downloaded during repository preparation; the `records100` waveforms still need to be obtained before full training.
+The official v1.0.3 audit found 17,084 included training records, 2,146 validation records and 2,158 test records; 411 records had no mapped diagnostic superclass. Reproduce it and check downloaded files with `python -m training.audit --data-dir data/ptb-xl/1.0.3 --check-files`. The published artifact was trained from the complete `records100` tree; the licensed source dataset itself is not bundled.
 
 ## 6. Prediction targets
 
@@ -106,10 +106,10 @@ The default theoretical receptive field before global pooling spans 1,291 input 
 Run every Python command from the repository root. Python **3.12** is the tested version. First install dependencies as described in Local setup and obtain the dataset above.
 
 ```powershell
-python -m training.train --data-dir data/ptb-xl/1.0.3 --run-dir artifacts/ptbxl-resnet1d-v1 --dataset-version 1.0.3 --seed 42 --epochs 60 --batch-size 64 --learning-rate 0.001 --weight-decay 0.0001 --dropout 0.3 --workers 0 --scheduler plateau --patience 10 --device auto
+python -m training.train --data-dir data/ptb-xl/1.0.3 --run-dir artifacts/ptbxl-resnet1d-v1 --dataset-version 1.0.3 --seed 42 --epochs 60 --batch-size 64 --learning-rate 0.001 --weight-decay 0.0001 --dropout 0.3 --workers 0 --scheduler plateau --patience 10 --device cuda --no-amp
 ```
 
-CUDA is used automatically if the installed PyTorch build and hardware support it; AMP is enabled only on CUDA. `--no-amp` disables it. For a CUDA wheel, follow the [official PyTorch installer](https://pytorch.org/get-started/locally/) for your hardware, preserving the pinned PyTorch version. The default environment may have a CPU-only wheel; `--device cuda` fails clearly if unavailable.
+The command above is the exact definitive configuration. It ran with PyTorch 2.14.1+cu130 on a 6 GB GTX 1660 Ti and stopped after epoch 22, selecting epoch 12. FP16 AMP produced a non-finite loss during the preflight attempt on this machine, so the frozen run used full precision via `--no-amp`. Other CUDA hardware may use AMP after a smoke check. For a CUDA wheel, follow the [official PyTorch installer](https://pytorch.org/get-started/locally/) for your hardware, preserving the pinned PyTorch version. `--device cuda` fails clearly if CUDA is unavailable; use `--device cpu` for a slower CPU run.
 
 Run `python -m training.train --help` for all options. CPU training is supported but a full run may be slow. `--threads` controls CPU parallelism. Windows defaults to `--workers 0` to avoid process-spawn overhead; increase after checking available RAM. Approximately 1 GB of waveform arrays is retained during training, plus model/optimizer memory and worker overhead.
 
@@ -129,14 +129,33 @@ Reports include macro/micro/per-class AUROC and AUPRC (average precision), macro
 
 ## 12. Results
 
-**Awaiting final evaluation.** No real PTB-XL training or held-out evaluation is included in this revision. Synthetic fixture metrics validate the software only and are never presented as model performance.
+The frozen checkpoint was evaluated once on the untouched PTB-XL v1.0.3 fold 10: 2,158 ECGs from 1,877 patients. Thresholds were selected earlier on fold 9 and were not changed after test access.
+
+| Aggregate metric | Value |
+|---|---:|
+| Macro AUROC | **0.9230** (95% CI 0.9155–0.9297) |
+| Micro AUROC | 0.9300 |
+| Macro AUPRC | 0.8171 |
+| Micro AUPRC | 0.8459 |
+| Macro F1 | 0.7417 |
+| Micro F1 | 0.7707 |
+
+| Class | Support | AUROC (95% CI) | AUPRC | F1 | Sensitivity | Specificity |
+|---|---:|---:|---:|---:|---:|---:|
+| CD | 496 | 0.9232 (0.9052–0.9388) | 0.8508 | 0.7612 | 0.7198 | 0.9489 |
+| HYP | 262 | 0.9062 (0.8865–0.9238) | 0.6727 | 0.6248 | 0.6450 | 0.9420 |
+| MI | 550 | 0.9102 (0.8958–0.9234) | 0.8095 | 0.7135 | 0.7382 | 0.8868 |
+| NORM | 963 | 0.9428 (0.9324–0.9519) | 0.9198 | 0.8601 | 0.8941 | 0.8510 |
+| STTC | 521 | 0.9327 (0.9196–0.9436) | 0.8327 | 0.7490 | 0.8676 | 0.8571 |
+
+The intervals are 1,000-repeat patient-cluster percentile bootstrap intervals for AUROC. They condition on this fitted model and do not represent training-run variability. These are benchmark results on one public retrospective dataset, not evidence of clinical effectiveness. The canonical machine-readable report is [`artifacts/ptbxl-resnet1d-v1/metrics.json`](artifacts/ptbxl-resnet1d-v1/metrics.json).
 
 The generated run directory is the deployable model bundle:
 
 ```text
 artifacts/ptbxl-resnet1d-v1/
   best_model.pt                 # inference weights + architecture identity
-  last_checkpoint.pt            # interrupted-training recovery
+  last_checkpoint.pt            # local interrupted-training recovery; not published
   model_metadata.json           # canonical serving contract; finalization marker
   thresholds.json               # human-readable export of metadata thresholds
   training_config.json
@@ -156,7 +175,7 @@ artifacts/ptbxl-resnet1d-v1/
     confusion_matrices.png
 ```
 
-Weights are SHA-256 bound to metadata, with strict architecture and class-order checks. Evaluation metrics/curves are also hash-bound. Hashes detect accidental mismatches, not malicious artifact forgery: load artifacts only from a trusted source. `torch.load(weights_only=True)` is used. Never copy old thresholds or metrics into a new run. The UI reads `/api/model`; changing `MODEL_DIR` and restarting selects the whole bundle atomically from the application's perspective.
+The 35 MB inference checkpoint is tracked with Git LFS; the 105 MB optimizer/resume checkpoint is intentionally excluded because the run is frozen and it is not required for inference. Weights are SHA-256 bound to metadata, with strict architecture and class-order checks. Evaluation metrics/curves are also hash-bound. Hashes detect accidental mismatches, not malicious artifact forgery: load artifacts only from a trusted source. `torch.load(weights_only=True)` is used. Never copy old thresholds or metrics into a new run. The UI reads `/api/model`; changing `MODEL_DIR` and restarting selects the whole bundle atomically from the application's perspective.
 
 ## 13. Application stack
 

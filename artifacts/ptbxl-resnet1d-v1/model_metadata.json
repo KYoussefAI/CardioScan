@@ -1,0 +1,323 @@
+{
+  "schema_version": 1,
+  "model_version": "ptbxl-resnet1d-v1",
+  "architecture": {
+    "name": "ECGResNet1D-v1",
+    "config": {
+      "channels": [
+        64,
+        128,
+        256,
+        512
+      ],
+      "blocks_per_stage": 2,
+      "dropout": 0.3
+    }
+  },
+  "classes": [
+    "CD",
+    "HYP",
+    "MI",
+    "NORM",
+    "STTC"
+  ],
+  "thresholds": {
+    "CD": 0.8384674787521362,
+    "HYP": 0.7571423053741455,
+    "MI": 0.6113135814666748,
+    "NORM": 0.6599610447883606,
+    "STTC": 0.4175865054130554
+  },
+  "threshold_selection": {
+    "fold": 9,
+    "objective": "per_class_f1"
+  },
+  "input": {
+    "leads": [
+      "I",
+      "II",
+      "III",
+      "aVR",
+      "aVL",
+      "aVF",
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6"
+    ],
+    "sample_rate": 100,
+    "samples": 1000,
+    "duration_seconds": 10,
+    "units": "mV"
+  },
+  "normalization": {
+    "method": "train_per_lead_zscore",
+    "mean": [
+      -0.001746811862099866,
+      -0.0015212931156082631,
+      0.0002254560492237521,
+      0.0016165512066289825,
+      -0.0009319163827935465,
+      -0.0006254733210469944,
+      0.00017762921782479306,
+      -0.0009517785193273021,
+      -0.001565068984118013,
+      -0.0013563100951855679,
+      -0.0007997736356735578,
+      -0.002424251412760938
+    ],
+    "std": [
+      0.1600102711952907,
+      0.15922999399842086,
+      0.1599724509933085,
+      0.13814794770150993,
+      0.1387672960920465,
+      0.13797789042150455,
+      0.23434960580588643,
+      0.33421613955589546,
+      0.32846893084117434,
+      0.29276387719389874,
+      0.27206945358877055,
+      0.2809676254721715
+    ],
+    "fit_folds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "record_count": 17084
+  },
+  "calibration": {
+    "method": "none",
+    "output": "uncalibrated_model_score"
+  },
+  "dataset": {
+    "name": "PTB-XL",
+    "version": "1.0.3"
+  },
+  "split": {
+    "train": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "validation": [
+      9
+    ],
+    "test": [
+      10
+    ]
+  },
+  "seed": 42,
+  "training_date": "2026-10-30T19:58:26.742503+00:00",
+  "best_epoch": 12,
+  "git_commit": "57e8e2f986d8d0722468ef796f8d3d6b2f565ded",
+  "git_dirty": false,
+  "checkpoint_sha256": "2e660482295f66c0b42e8f20cbd47c18ad6d5931f4b933a597488efd3f6ead85",
+  "data_fingerprint": {
+    "metadata_sha256": "c5f9897789758aa9d849a2c67a23b8b393154cbf11fedba2ac734d6fce08feb6",
+    "development_waveforms_sha256": "1d73d16149d6c985138c6ea8493c9bb53a0440fd5586ae508abe7243bc57053b"
+  },
+  "training_config": {
+    "dataset_version": "1.0.3",
+    "seed": 42,
+    "batch_size": 64,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "dropout": 0.3,
+    "workers": 0,
+    "scheduler": "plateau",
+    "patience": 10,
+    "device": "cuda",
+    "threads": 4,
+    "no_amp": true,
+    "smoke": false
+  },
+  "frozen": true,
+  "synthetic": false,
+  "test_metrics": {
+    "record_count": 2158,
+    "macro_auroc": 0.9230167865711459,
+    "micro_auroc": 0.9300104395726438,
+    "macro_auprc": 0.8170836782820668,
+    "micro_auprc": 0.8458595199862246,
+    "macro_f1": 0.7417199448098752,
+    "micro_f1": 0.7706831445245451,
+    "per_class": {
+      "CD": {
+        "auroc": 0.9231663173013469,
+        "auprc": 0.8507513510793767,
+        "precision": 0.8076923076923077,
+        "recall": 0.719758064516129,
+        "sensitivity": 0.719758064516129,
+        "specificity": 0.9488567990373045,
+        "f1": 0.7611940298507462,
+        "support": 496,
+        "threshold": 0.8384674787521362,
+        "confusion_matrix": [
+          [
+            1577,
+            85
+          ],
+          [
+            139,
+            357
+          ]
+        ]
+      },
+      "HYP": {
+        "auroc": 0.9062308757689953,
+        "auprc": 0.672661351673423,
+        "precision": 0.6057347670250897,
+        "recall": 0.6450381679389313,
+        "sensitivity": 0.6450381679389313,
+        "specificity": 0.9419831223628692,
+        "f1": 0.6247689463955638,
+        "support": 262,
+        "threshold": 0.7571423053741455,
+        "confusion_matrix": [
+          [
+            1786,
+            110
+          ],
+          [
+            93,
+            169
+          ]
+        ]
+      },
+      "MI": {
+        "auroc": 0.9101503844414291,
+        "auprc": 0.8095044622376266,
+        "precision": 0.6904761904761905,
+        "recall": 0.7381818181818182,
+        "sensitivity": 0.7381818181818182,
+        "specificity": 0.8868159203980099,
+        "f1": 0.7135325131810193,
+        "support": 550,
+        "threshold": 0.6113135814666748,
+        "confusion_matrix": [
+          [
+            1426,
+            182
+          ],
+          [
+            144,
+            406
+          ]
+        ]
+      },
+      "NORM": {
+        "auroc": 0.9428285909183731,
+        "auprc": 0.919844565265668,
+        "precision": 0.8286814244465832,
+        "recall": 0.8940809968847352,
+        "sensitivity": 0.8940809968847352,
+        "specificity": 0.8510460251046025,
+        "f1": 0.8601398601398601,
+        "support": 963,
+        "threshold": 0.6599610447883606,
+        "confusion_matrix": [
+          [
+            1017,
+            178
+          ],
+          [
+            102,
+            861
+          ]
+        ]
+      },
+      "STTC": {
+        "auroc": 0.9327077644255855,
+        "auprc": 0.8326566611542403,
+        "precision": 0.6588921282798834,
+        "recall": 0.8675623800383877,
+        "sensitivity": 0.8675623800383877,
+        "specificity": 0.857055589492975,
+        "f1": 0.7489643744821872,
+        "support": 521,
+        "threshold": 0.4175865054130554,
+        "confusion_matrix": [
+          [
+            1403,
+            234
+          ],
+          [
+            69,
+            452
+          ]
+        ]
+      }
+    },
+    "thresholds": {
+      "CD": 0.8384674787521362,
+      "HYP": 0.7571423053741455,
+      "MI": 0.6113135814666748,
+      "NORM": 0.6599610447883606,
+      "STTC": 0.4175865054130554
+    },
+    "auprc_definition": "average_precision (non-interpolated)",
+    "partition": "test",
+    "fold": 10,
+    "model_version": "ptbxl-resnet1d-v1",
+    "checkpoint_sha256": "2e660482295f66c0b42e8f20cbd47c18ad6d5931f4b933a597488efd3f6ead85",
+    "synthetic": false,
+    "evaluated_at": "2026-10-30T20:06:51.030874+00:00",
+    "auroc_ci95": {
+      "method": "patient_cluster_percentile",
+      "repeats": 1000,
+      "seed": 42,
+      "intervals": {
+        "CD": {
+          "lower": 0.9051546627397737,
+          "upper": 0.9387731581929668,
+          "valid_repeats": 1000
+        },
+        "HYP": {
+          "lower": 0.8865020275587187,
+          "upper": 0.9238235691436001,
+          "valid_repeats": 1000
+        },
+        "MI": {
+          "lower": 0.8957647910957551,
+          "upper": 0.9234291675008902,
+          "valid_repeats": 1000
+        },
+        "NORM": {
+          "lower": 0.9324327128542329,
+          "upper": 0.9519060887715024,
+          "valid_repeats": 1000
+        },
+        "STTC": {
+          "lower": 0.9195851021573374,
+          "upper": 0.9436016208330186,
+          "valid_repeats": 1000
+        },
+        "macro": {
+          "lower": 0.9155216181900402,
+          "upper": 0.9296686422311101,
+          "valid_repeats": 1000
+        }
+      }
+    }
+  },
+  "software": {
+    "torch": "2.14.1+cu130",
+    "numpy": "2.5.3"
+  },
+  "metrics_sha256": "eecdc2a8f0246e47e1f2df64095da3ada8edf71a487b773f8b4c347bc9e59a3b",
+  "curves_sha256": "b172ab4e96c3d2f25866dc74030c61cb0a63d81af1a94caaf418e8180e6aa5be"
+}
